@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Card — Profile Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-page: #0e0f14;
+      --bg-card: #16181f;
+      --bg-card-done: #12141a;
+      --border: #2a2d3a;
+      --border-hover: #3d4155;
+      --text-primary: #f0f1f5;
+      --text-secondary: #8a8fa8;
+      --text-muted: #555a72;
+      --accent: #4fd1c5;
+      --accent-dim: rgba(79,209,197,0.12);
+      --amber: #f6ad55;
+      --amber-dim: rgba(246,173,85,0.12);
+      --red: #fc8181;
+      --red-dim: rgba(252,129,129,0.10);
+      --green: #68d391;
+      --green-dim: rgba(104,211,145,0.12);
+      --purple: #b794f4;
+      --purple-dim: rgba(183,148,244,0.12);
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+      --radius: 16px;
+      --radius-sm: 8px;
+      --radius-pill: 100px;
+    }
+
+    body {
+      font-family: var(--font-display);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* Background grid pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(79,209,197,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,209,197,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .page-center {
+      width: 100%;
+      max-width: 520px;
+      position: relative;
+    }
+
+    /* ── Card ── */
+    article[data-testid="test-todo-card"] {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      position: relative;
+      transition: border-color 0.2s, opacity 0.3s;
+      overflow: hidden;
+    }
+
+    article[data-testid="test-todo-card"]:hover {
+      border-color: var(--border-hover);
+    }
+
+    article[data-testid="test-todo-card"].done {
+      background: var(--bg-card-done);
+      opacity: 0.7;
+    }
+
+    /* Accent left bar */
+    article[data-testid="test-todo-card"]::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      bottom: 20%;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+      transition: opacity 0.3s;
+    }
+
+    article[data-testid="test-todo-card"].done::before {
+      opacity: 0.3;
+    }
+
+    /* ── Header row ── */
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Checkbox ── */
+    .checkbox-wrapper {
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    input[data-testid="test-todo-complete-toggle"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border-hover);
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      background: transparent;
+      transition: border-color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    input[data-testid="test-todo-complete-toggle"]:hover {
+      border-color: var(--accent);
+    }
+
+    input[data-testid="test-todo-complete-toggle"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    input[data-testid="test-todo-complete-toggle"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 6px;
+      height: 10px;
+      border: 2px solid #0e0f14;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+
+    /* ── Title + meta block ── */
+    .title-block { flex: 1; min-width: 0; }
+
+    h2[data-testid="test-todo-title"] {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.4;
+      transition: color 0.3s, text-decoration 0.3s;
+      word-break: break-word;
+    }
+
+    .done h2[data-testid="test-todo-title"] {
+      color: var(--text-muted);
+      text-decoration: line-through;
+      text-decoration-color: var(--text-muted);
+    }
+
+    /* ── Badge row ── */
+    .badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* Priority badge */
+    span[data-testid="test-todo-priority"].priority-high {
+      background: var(--amber-dim);
+      color: var(--amber);
+      border: 1px solid rgba(246,173,85,0.25);
+    }
+    span[data-testid="test-todo-priority"].priority-medium {
+      background: var(--purple-dim);
+      color: var(--purple);
+      border: 1px solid rgba(183,148,244,0.25);
+    }
+    span[data-testid="test-todo-priority"].priority-low {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(104,211,145,0.25);
+    }
+
+    /* Status badge */
+    span[data-testid="test-todo-status"].status-in-progress {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(79,209,197,0.25);
+    }
+    span[data-testid="test-todo-status"].status-done {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(104,211,145,0.25);
+    }
+    span[data-testid="test-todo-status"].status-todo {
+      background: rgba(138,143,168,0.10);
+      color: var(--text-secondary);
+      border: 1px solid rgba(138,143,168,0.2);
+    }
+
+    /* ── Description ── */
+    p[data-testid="test-todo-description"] {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      margin: 1rem 0;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1rem 0;
+    }
+
+    /* ── Time info row ── */
+    .time-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .time-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .time-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    time[data-testid="test-todo-due-date"],
+    time[data-testid="test-todo-time-remaining"] {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    time[data-testid="test-todo-due-date"] {
+      color: var(--text-primary);
+    }
+
+    time[data-testid="test-todo-time-remaining"].overdue {
+      color: var(--red);
+    }
+    time[data-testid="test-todo-time-remaining"].due-soon {
+      color: var(--amber);
+    }
+    time[data-testid="test-todo-time-remaining"].on-track {
+      color: var(--accent);
+    }
+    time[data-testid="test-todo-time-remaining"].done-status {
+      color: var(--green);
+    }
+
+    /* ── Tags ── */
+    ul[data-testid="test-todo-tags"] {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 1.25rem;
+    }
+
+    ul[data-testid="test-todo-tags"] li {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: rgba(138,143,168,0.08);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    ul[data-testid="test-todo-tags"] li:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Action buttons ── */
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    button[data-testid="test-todo-edit-button"] {
+      color: var(--text-secondary);
+    }
+
+    button[data-testid="test-todo-edit-button"]:hover {
+      background: rgba(138,143,168,0.1);
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    button[data-testid="test-todo-delete-button"] {
+      color: var(--red);
+      border-color: rgba(252,129,129,0.2);
+    }
+
+    button[data-testid="test-todo-delete-button"]:hover {
+      background: var(--red-dim);
+      border-color: rgba(252,129,129,0.4);
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-icon {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-center">
+    <article data-testid="test-todo-card" id="todo-card">
+
+      <div class="card-header">
+        <div class="checkbox-wrapper">
+          <label for="complete-toggle" class="sr-only">Mark task complete</label>
+          <input
+            type="checkbox"
+            id="complete-toggle"
+            data-testid="test-todo-complete-toggle"
+            aria-label="Mark task complete"
+            onchange="toggleDone(this)"
+          />
+        </div>
+
+        <div class="title-block">
+          <h2 data-testid="test-todo-title">Prepare Q2 Team Progress Report</h2>
+          <div class="badge-row">
+            <span
+              data-testid="test-todo-priority"
+              class="badge priority-high"
+              aria-label="Priority: High"
+            >High</span>
+            <span
+              data-testid="test-todo-status"
+              class="badge status-in-progress"
+              id="status-badge"
+              aria-label="Status: In Progress"
+            >In Progress</span>
+          </div>
+        </div>
+      </div>
+
+      <p data-testid="test-todo-description">
+        Compile and format the quarterly progress report for the operations team. Include KPIs, project milestones, budget usage, and action points for the next quarter.
+      </p>
+
+      <div class="divider"></div>
+
+      <div class="time-row">
+        <div class="time-item">
+          <span class="time-label">Due date</span>
+          <time data-testid="test-todo-due-date" id="due-date" datetime=""></time>
+        </div>
+        <div class="time-item" style="text-align:right;">
+          <span class="time-label">Time remaining</span>
+          <time data-testid="test-todo-time-remaining" id="time-remaining" datetime=""></time>
+        </div>
+      </div>
+
+      <ul data-testid="test-todo-tags" role="list" aria-label="Categories">
+        <li data-testid="test-todo-tag-reporting">Reporting</li>
+        <li data-testid="test-todo-tag-operations">Operations</li>
+        <li data-testid="test-todo-tag-q2">Q2</li>
+        <li data-testid="test-todo-tag-management">Management</li>
+      </ul>
+
+      <div class="actions">
+        <button
+          data-testid="test-todo-edit-button"
+          class="btn"
+          aria-label="Edit task"
+          onclick="alert('Edit clicked')"
+        >
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit
+        </button>
+        <button
+          data-testid="test-todo-delete-button"
+          class="btn"
+          aria-label="Delete task"
+          onclick="alert('Delete clicked')"
+        >
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+          Delete
+        </button>
+      </div>
+
+    </article>
+  </div>
+
+  <script>
+    var DUE_DATE = new Date('2026-04-16T23:59:00');
+
+    function formatDueDate(d) {
+      return 'Due ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatTimeRemaining(d) {
+      var now = new Date();
+      var diff = d - now;
+      var absDiff = Math.abs(diff);
+      var mins = Math.floor(absDiff / 60000);
+      var hours = Math.floor(absDiff / 3600000);
+      var days = Math.floor(absDiff / 86400000);
+
+      if (diff < 0) {
+        if (mins < 60) return 'Overdue by ' + mins + (mins === 1 ? ' minute' : ' minutes');
+        if (hours < 24) return 'Overdue by ' + hours + (hours === 1 ? ' hour' : ' hours');
+        return 'Overdue by ' + days + (days === 1 ? ' day' : ' days');
+      } else {
+        if (mins < 60) return 'Due in ' + mins + (mins === 1 ? ' minute' : ' minutes');
+        if (hours < 24) return 'Due in ' + hours + (hours === 1 ? ' hour' : ' hours');
+        return 'Due in ' + days + (days === 1 ? ' day' : ' days');
+      }
+    }
+
+    function getTimeClass(d) {
+      var diff = d - new Date();
+      if (diff < 0) return 'overdue';
+      if (diff < 86400000 * 2) return 'due-soon';
+      return 'on-track';
+    }
+
+    function updateTimes() {
+      var dueDateEl = document.getElementById('due-date');
+      var timeRemainingEl = document.getElementById('time-remaining');
+
+      dueDateEl.textContent = formatDueDate(DUE_DATE);
+      dueDateEl.setAttribute('datetime', DUE_DATE.toISOString());
+
+      var card = document.getElementById('todo-card');
+      if (card.classList.contains('done')) {
+        timeRemainingEl.textContent = 'Completed';
+        timeRemainingEl.className = 'done-status';
+      } else {
+        timeRemainingEl.textContent = formatTimeRemaining(DUE_DATE);
+        timeRemainingEl.className = getTimeClass(DUE_DATE);
+        timeRemainingEl.setAttribute('datetime', DUE_DATE.toISOString());
+      }
+    }
+
+    function toggleDone(checkbox) {
+      var card = document.getElementById('todo-card');
+      var statusBadge = document.getElementById('status-badge');
+      if (checkbox.checked) {
+        card.classList.add('done');
+        statusBadge.textContent = 'Done';
+        statusBadge.className = 'badge status-done';
+        statusBadge.setAttribute('aria-label', 'Status: Done');
+      } else {
+        card.classList.remove('done');
+        statusBadge.textContent = 'In Progress';
+        statusBadge.className = 'badge status-in-progress';
+        statusBadge.setAttribute('aria-label', 'Status: In Progress');
+      }
+      updateTimes();
+    }
+
+    updateTimes();
+    setInterval(updateTimes, 45000);
+  </script>
+</body>
+</html>
